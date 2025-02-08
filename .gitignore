@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pip-selfcheck.json
+
+**/__pycache__/
+
+
+# Django
+*.log
+*.pot
+*.pyc
+**/*.pyc
+.pyc
+db.sqlite3
+.env
+.env.local
+
+# Migrations (ignore all except __init__.py)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# IDE
+.vscode/
+.idea/
+
+# Local development
+instance/
+.webassets-cache
+
+# Virtual Environment
+# (add your specific virtualenv name if different)
+venv/
+myenv/
+
+# Database
+*.db
+*.sqlite3
+
+# Static files
+/staticfiles/
+/mediafiles/
+
+*.gitignore:Zone.Identifier

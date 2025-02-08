@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monash Timetable Generator</title>
+  <style>
+    /* Base styles */
+    .drop-zone, .preference-section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      background: #f8f9fa;
+    }
+    /* File upload section */
+    .drop-zone {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+    /* Preference sections */
+    .preference-group {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Time pickers */
+    .time-picker-group {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+    /* Lecturer selection */
+    .lecturer-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem;
+      border-bottom: 1px solid #ddd;
+    }
+    .lecturer-info {
+      flex-grow: 1;
+    }
+    .save-button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .save-button:hover {
+      background-color: #1976D2;
+    }
+    /* (Optional) Styling for the plain checkboxes */
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+      width: 16px;
+      height: 16px;
+    }
+    .lecturer-list {
+            list-style: none;
+            padding-left: 0;
+        }
+    .lecturer-item {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+  </style>
+</head>
+<body>
+  <h1>Monash Timetable Generator</h1>
+
+  <!-- Main form for CSV upload -->
+  <form id="timetableForm" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <!-- File Upload Section -->
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-zone__prompt">📁 Drop CSV file here or click to upload</span>
+      <input type="file" name="file" class="drop-zone__input" accept=".csv" required>
+      <button type="submit" name="submit">Submit</button>
+    </div>
+
+    <div id="fileList"></div>
+  </form>
+  <form method="post" id="preferencesForm">
+      {% csrf_token %}
+      
+      <!-- Lecturer Selection Section -->
+      {% if available_lecturers %}
+      <div class="lecturers-section">
+        <h3>Select Lecturers</h3>
+        <ol>
+          {% for avl_lec in available_lecturers %}
+            <li>
+              <div class="lecturer-item">
+                <!-- Here we encode all lecturer info (e.g. name, unit, type) in the checkbox value -->
+                <input type="checkbox" name="lecturers" value="{{ avl_lec.0 }},{{ avl_lec.1 }},{{ avl_lec.2 }}">
+                <div class="lecturer-info">
+                  <strong>Lecturer:</strong> {{ avl_lec.0 }}<br>
+                  <strong>Unit:</strong> {{ avl_lec.1 }}<br>
+                  <strong>Type:</strong> {{ avl_lec.2 }}
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% else %}
+        <p>No classes loaded yet. Please upload a CSV file.</p>
+      {% endif %}
+    
+      <!-- Preferred time span -->
+      
+
+      <button type="submit" name="action" value="save_preferences" class="save-button">
+        Save Preferences
+      </button>
+    </form>
+      
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.querySelector(".drop-zone__input");
+      const fileList = document.getElementById("fileList");
+
+      dropZone.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () => {
+        fileList.innerHTML = "";
+        Array.from(fileInput.files).forEach(file => {
+          const fileItem = document.createElement("div");
+          fileItem.textContent = `${file.name} (${file.size} bytes)`;
+          fileList.appendChild(fileItem);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
