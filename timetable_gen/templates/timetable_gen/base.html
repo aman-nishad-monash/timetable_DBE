@@ -87,7 +87,7 @@
     <div class="drop-zone" id="dropZone">
       <span class="drop-zone__prompt">📁 Drop CSV file here or click to upload</span>
       <input type="file" name="file" class="drop-zone__input" accept=".csv" required>
-      <button type="submit" name="submit">Submit</button>
+      <button type="submit">Submit</button>
     </div>
 
     <div id="fileList"></div>
@@ -104,7 +104,7 @@
             <li>
               <div class="lecturer-item">
                 <!-- Here we encode all lecturer info (e.g. name, unit, type) in the checkbox value -->
-                <input type="checkbox" name="lecturers" value="{{ avl_lec.0 }},{{ avl_lec.1 }},{{ avl_lec.2 }}">
+                <input type="checkbox" name="lecturers" value="{{ avl_lec.0 }}|{{ avl_lec.1 }}|{{ avl_lec.2 }}">
                 <div class="lecturer-info">
                   <strong>Lecturer:</strong> {{ avl_lec.0 }}<br>
                   <strong>Unit:</strong> {{ avl_lec.1 }}<br>
@@ -119,13 +119,77 @@
         <p>No classes loaded yet. Please upload a CSV file.</p>
       {% endif %}
     
-      <!-- Preferred time span -->
+          <!-- Time Inputs -->
+    <div class="time-picker-group">
+      <div class="preference-group">
+        <label>{{ form.preferred_start_time.label }}</label>
+        {{ form.preferred_start_time }}
+      </div>
+      <div class="preference-group">
+        <label>{{ form.preferred_end_time.label }}</label>
+        {{ form.preferred_end_time }}
+      </div>
+    </div>
+  
+    <!-- Days Off -->
+    <div class="preference-group">
+      <label>{{ form.days_off.label }}</label>
+      {{ form.days_off }}
+    </div>
+  
+    <!-- Unit Ranks -->
+    {% if units %}
+    <div class="preference-group">
+      <h3>Unit Rankings (4 = most important)</h3>
+      {% for unit_name, unit_code in units %}
+      <div class="input-group">
+        <label>{{ unit_name }} ({{ unit_code }})</label>
+        <input type="number" name="unit_rank_{{ unit_code }}" 
+               min="1" max="4" required>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  
+    <!-- Busy Schedule -->
+    <div class="preference-group">
+      <label>
+        {{ form.busy_sched }} {{ form.busy_sched.label }}
+      </label>
+    </div>
+  
+    <!-- Critical Features -->
+    <div class="preference-group">
+      <h3>Critical Preferences</h3>
+      {% for field in form %}
+        {% if field.name|slice:':8' == 'critical' %}
+        <div class="critical-item">
+          <label>
+            {{ field }} {{ field.label }}
+          </label>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  
+    <!-- Preference Order -->
+    <div class="preference-group">
+      <h3>Preference Priority Order</h3>
+      {% for field in form %}
+        {% if field.name|slice:':16' == 'preference_order' %}
+        <div class="order-item">
+          <label>{{ field }} {{ field.label}}</label>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
       
 
       <button type="submit" name="action" value="save_preferences" class="save-button">
-        Save Preferences
+        Generate Timetable
       </button>
     </form>
+    
       
   <script>
     document.addEventListener("DOMContentLoaded", () => {
