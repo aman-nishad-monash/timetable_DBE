@@ -1,0 +1,140 @@
+{% extends "timetable_gen/base.html" %}
+
+{% block content %}
+  <!-- CSV File Upload Form -->
+  <form id="timetableForm" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-zone__prompt">📁 Drop CSV file here or click to upload</span>
+      <input type="file" name="file" class="drop-zone__input" accept=".csv" required>
+      <button type="submit">Submit</button>
+    </div>
+    <div id="fileList"></div>
+  </form>
+
+  <!-- Preferences Form -->
+  <form method="post" id="preferencesForm">
+    {% csrf_token %}
+    <!-- Lecturer Selection Section -->
+    {% if available_lecturers %}
+      <div class="lecturers-section">
+        <h3>Select Lecturers</h3>
+        <ol>
+          {% for avl_lec in available_lecturers %}
+            <li>
+              <div class="lecturer-item">
+                <input type="checkbox" name="lecturers" value="{{ avl_lec.0 }}|{{ avl_lec.1 }}|{{ avl_lec.2 }}">
+                <div class="lecturer-info">
+                  <strong>Lecturer:</strong> {{ avl_lec.0 }}<br>
+                  <strong>Unit:</strong> {{ avl_lec.1 }}<br>
+                  <strong>Type:</strong> {{ avl_lec.2 }}
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    {% else %}
+      <p>No classes loaded yet. Please upload a CSV file.</p>
+    {% endif %}
+
+    <!-- Time Inputs -->
+    <div class="time-picker-group">
+      <div class="preference-group">
+        <label for="{{ form.preferred_start_time.id_for_label }}">{{ form.preferred_start_time.label }}</label>
+        {{ form.preferred_start_time }}
+      </div>
+      <div class="preference-group">
+        <label for="{{ form.preferred_end_time.id_for_label }}">{{ form.preferred_end_time.label }}</label>
+        {{ form.preferred_end_time }}
+      </div>
+    </div>
+
+    <!-- Days Off -->
+    <div class="preference-group">
+      <label for="{{ form.days_off.id_for_label }}">{{ form.days_off.label }}</label>
+      {{ form.days_off }}
+    </div>
+
+    <!-- Unit Ranks -->
+    {% if units %}
+      <div class="preference-group">
+        <h3>Unit Rankings (4 = most important)</h3>
+        {% for unit_name, unit_code in units %}
+          <div class="input-group">
+            <label>{{ unit_name }} ({{ unit_code }})</label>
+            <input type="number" name="unit_rank_{{ unit_code }}" min="1" max="4" required>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Busy Schedule -->
+    <div class="preference-group">
+      <label>
+        {{ form.busy_sched }} {{ form.busy_sched.label }}
+      </label>
+    </div>
+
+    <!-- Critical Features -->
+    <div class="preference-group">
+      <h3>Critical Preferences</h3>
+      {% for field in form %}
+        {% if field.name|slice:":8" == "critical" %}
+          <div class="critical-item">
+            <label>
+              {{ field }} {{ field.label }}
+            </label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Preference Order -->
+    <div class="preference-group">
+      <h3>Preference Priority Order</h3>
+      {% for field in form %}
+        {% if field.name|slice:":16" == "preference_order" %}
+          <div class="order-item">
+            <label>{{ field }} {{ field.label }}</label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <button type="submit" name="action" value="save_preferences" class="save-button">
+      Generate Timetable
+    </button>
+  </form>
+
+  <!-- Navigation Button to Timetable View -->
+  <a href="{% url 'timetable_view' %}" class="nav-button">View Timetable</a>
+
+  <!-- JavaScript for file upload interaction -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.querySelector(".drop-zone__input");
+      const fileList = document.getElementById("fileList");
+
+      dropZone.addEventListener("click", (event) => {
+        if (
+          event.target.tagName.toLowerCase() === "button" ||
+          event.target.classList.contains("drop-zone__input")
+        ) {
+          return;
+        }
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", () => {
+        fileList.innerHTML = "";
+        Array.from(fileInput.files).forEach(file => {
+          const fileItem = document.createElement("div");
+          fileItem.textContent = `${file.name} (${file.size} bytes)`;
+          fileList.appendChild(fileItem);
+        });
+      });
+    });
+  </script>
+{% endblock %}

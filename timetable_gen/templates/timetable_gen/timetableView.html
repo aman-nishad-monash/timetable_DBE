@@ -1,0 +1,22 @@
+{% extends "timetable_gen/base.html" %}
+
+{% block content %}
+  <!-- Navigation Button to Home -->
+  <a href="{% url 'home' %}" class="nav-button">Back to Home</a>
+
+  <h2>Generated Timetable</h2>
+  {% if timetable_classes %}
+    <div class="timetable">
+      {% for cls in timetable_classes %}
+        <div class="timetable-entry">
+          <!-- Replace the fields below with your actual timetable data -->
+          <p><strong>{{ cls.unit_name }}</strong> – {{ cls.lecturer_name }}</p>
+          <p>{{ cls.day }}: {{ cls.start_time }} – {{ cls.end_time }}</p>
+          <p>Class type: {{ cls.class_type }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No timetable generated yet. Please upload a CSV file and set your preferences.</p>
+  {% endif %}
+{% endblock %}
