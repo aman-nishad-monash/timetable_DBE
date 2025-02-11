@@ -42,10 +42,6 @@ class UniClass:
         timetable = csv.DictReader(text_file)
         classes = []
 
-        global class_combos_available
-        # Generate sorted list of unique unit-class type combinations
-        class_combos = list({(cls.unit_code, cls.class_type) for cls in classes})
-        class_combos_available = sorted(class_combos, key=lambda x: (x[0], x[1]))
         
         for row in timetable:
             match = re.search(r'\b(applied|workshop|seminar|laboratory|tutorial)\b', row['Class'], re.IGNORECASE)
@@ -63,7 +59,6 @@ class UniClass:
         return classes
 
     def retreive_units_lecturers(classes):
-        global available_lecturers
         unique_lecturers = {(cls.lecturer, cls.unit_code, cls.class_type[0].upper()+cls.class_type[1:]) for cls in classes}
         available_lecturers = sorted(unique_lecturers, key=lambda x: (x[1], x[2], x[0]))
 
@@ -76,16 +71,13 @@ class UniClass:
         class_combos = list({(cls.unit_code, cls.class_type) for cls in classes})
         class_combos_available = sorted(class_combos, key=lambda x: (x[0], x[1]))
         covered_combos = set()
-        print(f"Available lecturers: {available_lecturers}", "\n")
-        print(f"Available combos: {class_combos_available}", "\n")
-        print(f"Selected lecturers: {selected_lecturers_pre}", "\n")
+        
         selected_lecturers = []
         for info in selected_lecturers_pre:
             selected_lecturers.append(info.strip().split('|'))
         for lec_info in selected_lecturers:
             combo = (lec_info[1], lec_info[2])  # (unit_code, class_type)
             covered_combos.add(combo)
-        print(f"Covered combos: {covered_combos}", "\n")
         
         
         # Check each combo in class_combos_available and add missing ones
@@ -94,7 +86,6 @@ class UniClass:
                 # Find all available lecturers for this combo
                 lecturers_to_add = []
                 for lec_info in available_lecturers:
-                    print(f"Combo in check: {combo}\n Combo check from data: {(lec_info[1], lec_info[2])}\n")
                     if (lec_info[1], lec_info[2].lower()) == combo:
                         lecturers_to_add.append(lec_info)
                         selected_lecturers.append(lec_info)
@@ -111,9 +102,6 @@ class UniClass:
             if lecturer not in seen_lecturers:
                 seen_lecturers.add(lecturer)
                 ideal_lecturers.append(lecturer)
-        print(f"Selected lecturersv2 : {selected_lecturers}", "\n")
-        print(f"Seen lecturers: {seen_lecturers}", "\n")
-        print(f"Ideal lecturers: {ideal_lecturers}", "\n")
 
         
         return ideal_lecturers
@@ -471,3 +459,5 @@ def timetable_generator(all_classes,prefs):
 
     #Printing timetable generated
     display_timetable(shortlisted_classes)
+
+    return shortlisted_classes

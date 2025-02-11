@@ -90,9 +90,8 @@ def home(request):
          "Busyness Level": form.cleaned_data['preference_order_busyness_level']
     }
 }
-            print(all_preferences)
             # Generate timetable
-            timetable_generator(classes, all_preferences)
+            timetable_classes = timetable_generator(classes, all_preferences)
     else:
         print("Form errors:", form.errors)
 

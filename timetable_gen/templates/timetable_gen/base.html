@@ -191,22 +191,33 @@
     </form>
     
       
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const dropZone = document.getElementById("dropZone");
-      const fileInput = document.querySelector(".drop-zone__input");
-      const fileList = document.getElementById("fileList");
-
-      dropZone.addEventListener("click", () => fileInput.click());
-      fileInput.addEventListener("change", () => {
-        fileList.innerHTML = "";
-        Array.from(fileInput.files).forEach(file => {
-          const fileItem = document.createElement("div");
-          fileItem.textContent = `${file.name} (${file.size} bytes)`;
-          fileList.appendChild(fileItem);
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.querySelector(".drop-zone__input");
+        const fileList = document.getElementById("fileList");
+    
+        dropZone.addEventListener("click", (event) => {
+          // If the click came from a button or the file input, do nothing.
+          if (
+            event.target.tagName.toLowerCase() === "button" ||
+            event.target.classList.contains("drop-zone__input")
+          ) {
+            return;
+          }
+          fileInput.click();
+        });
+    
+        fileInput.addEventListener("change", () => {
+          fileList.innerHTML = "";
+          Array.from(fileInput.files).forEach(file => {
+            const fileItem = document.createElement("div");
+            fileItem.textContent = `${file.name} (${file.size} bytes)`;
+            fileList.appendChild(fileItem);
+          });
         });
       });
-    });
-  </script>
+    </script>
+    
 </body>
 </html>
