@@ -2,7 +2,8 @@
 
 {% block content %}
   <!-- Navigation Button to Home -->
-  <a href="{% url 'home' %}" class="nav-button">Back to Home</a>
+  <a href="{% url 'reset' %}" class="nav-button">Back to Home</a>
+  <a href="{% url 'home' %}" class="nav-button">Change Preferences</a>
 
   <h2>Generated Timetable</h2>
   {% if timetable_classes %}

@@ -7,20 +7,20 @@ def home(request):
     classes = None
     available_lecturers = None
     units = None
-    form = PreferencesForm()
-
+    saved_preferences = request.session.get("user_preferences", {})
+    form = PreferencesForm(initial=saved_preferences)
     # Handle CSV file upload
     if request.method == "POST" and request.FILES.get("file"):
         csv_file = request.FILES["file"]
         classes = UniClass.load_read_csv(csv_file)
-        # Expecting retreive_units_lecturers to return two lists (e.g. lecturers and units)
         available_lecturers, units = list(UniClass.retreive_units_lecturers(classes))
         # Store serializable versions in the session
         request.session['classes'] = [cls.to_dict() for cls in classes]
         request.session['available_lecturers'] = available_lecturers
-        request.session['units'] = units
-        # Redirect so that the preferences form loads with the new CSV data
+        request.session['units'] = units  # List of (unit_name, unit_code)
+        request.session.set_expiry(300)  # 5-minute expiry
         return redirect('home')
+
 
     # Handle preferences form submission
     if request.method == "POST" and request.POST.get("action") == "save_preferences":
@@ -89,10 +89,15 @@ def home(request):
                     "Busyness Level": form.cleaned_data['preference_order_busyness_level']
                 }
             }
-
+            saved_data = form.cleaned_data.copy()
+            saved_data['lecturers'] = request.POST.getlist('lecturers')
+            request.session["user_preferences"] = saved_data
+            request.session.set_expiry(300)
+            
             # Generate timetable based on classes and preferences
             timetable_classes = timetable_generator(classes, all_preferences)
             request.session['timetable_classes'] = [cls.to_dict() for cls in timetable_classes]
+            return redirect('timetable_view')
         else:
             print("Form errors:", form.errors)
 
@@ -107,11 +112,12 @@ def home(request):
 
 def timetable_view(request):
     timetable_classes_serialized = request.session.get('timetable_classes')
-    if timetable_classes_serialized:
-        timetable_classes = [UniClass.from_dict(data) for data in timetable_classes_serialized]
-    else:
-        timetable_classes = None
+    timetable_classes = [UniClass.from_dict(data) for data in timetable_classes_serialized] if timetable_classes_serialized else None
 
     return render(request, 'timetable_gen/timetableView.html', {
         'timetable_classes': timetable_classes,
     })
+
+def reset_view(request):
+    request.session.flush()
+    return redirect('home')

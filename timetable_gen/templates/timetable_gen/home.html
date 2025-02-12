@@ -23,7 +23,7 @@
           {% for avl_lec in available_lecturers %}
             <li>
               <div class="lecturer-item">
-                <input type="checkbox" name="lecturers" value="{{ avl_lec.0 }}|{{ avl_lec.1 }}|{{ avl_lec.2 }}">
+                <input type="checkbox" name="lecturers" value="{{ forloop.counter0 }}">
                 <div class="lecturer-info">
                   <strong>Lecturer:</strong> {{ avl_lec.0 }}<br>
                   <strong>Unit:</strong> {{ avl_lec.1 }}<br>
@@ -107,8 +107,6 @@
     </button>
   </form>
 
-  <!-- Navigation Button to Timetable View -->
-  <a href="{% url 'timetable_view' %}" class="nav-button">View Timetable</a>
 
   <!-- JavaScript for file upload interaction -->
   <script>
@@ -116,6 +114,7 @@
       const dropZone = document.getElementById("dropZone");
       const fileInput = document.querySelector(".drop-zone__input");
       const fileList = document.getElementById("fileList");
+      const maxSize = 2 * 1024 * 1024; // 2MB
 
       dropZone.addEventListener("click", (event) => {
         if (
@@ -129,12 +128,34 @@
 
       fileInput.addEventListener("change", () => {
         fileList.innerHTML = "";
-        Array.from(fileInput.files).forEach(file => {
+        const file = fileInput.files[0];
+
+        if (file) {
+          if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+            alert("Only CSV files are allowed!");
+            fileInput.value = ""; // Clear input
+            return;
+          }
+
+          if (file.size > maxSize) {
+            alert("File size exceeds 2MB limit!");
+            fileInput.value = ""; // Clear input
+            return;
+          }
+
           const fileItem = document.createElement("div");
           fileItem.textContent = `${file.name} (${file.size} bytes)`;
           fileList.appendChild(fileItem);
-        });
+        }
+      });
+
+      document.getElementById("timetableForm").addEventListener("submit", (event) => {
+        if (!fileInput.files.length) {
+          alert("Please upload a valid CSV file.");
+          event.preventDefault();
+        }
       });
     });
+
   </script>
 {% endblock %}

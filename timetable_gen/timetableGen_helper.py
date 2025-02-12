@@ -73,8 +73,8 @@ class UniClass:
         covered_combos = set()
         
         selected_lecturers = []
-        for info in selected_lecturers_pre:
-            selected_lecturers.append(info.strip().split('|'))
+        for selected_index in selected_lecturers_pre:
+            selected_lecturers.append(available_lecturers[int(selected_index)])
         for lec_info in selected_lecturers:
             combo = (lec_info[1], lec_info[2])  # (unit_code, class_type)
             covered_combos.add(combo)
