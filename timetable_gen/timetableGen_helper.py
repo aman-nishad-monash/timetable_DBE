@@ -68,18 +68,18 @@ class UniClass:
         return available_lecturers, units
 
     def finalizing_ideal_lecturers(selected_lecturers_pre, classes, available_lecturers):
-        class_combos = list({(cls.unit_code, cls.class_type) for cls in classes})
+        class_combos = list(set((cls.unit_code, cls.class_type) for cls in classes))
         class_combos_available = sorted(class_combos, key=lambda x: (x[0], x[1]))
         covered_combos = set()
-        
+        print(f"Class combos: {class_combos_available}")
         selected_lecturers = []
         for selected_index in selected_lecturers_pre:
             selected_lecturers.append(available_lecturers[int(selected_index)])
         for lec_info in selected_lecturers:
-            combo = (lec_info[1], lec_info[2])  # (unit_code, class_type)
+            combo = (lec_info[1], lec_info[2].lower())  # (unit_code, class_type)
             covered_combos.add(combo)
         
-        
+        print("Covered combos: ", covered_combos)
         # Check each combo in class_combos_available and add missing ones
         for combo in class_combos_available:
             if combo not in covered_combos:
@@ -103,7 +103,7 @@ class UniClass:
                 seen_lecturers.add(lecturer)
                 ideal_lecturers.append(lecturer)
 
-        
+        print("Ideal Lecturers: ", ideal_lecturers)
         return ideal_lecturers
 
     def to_dict(self):

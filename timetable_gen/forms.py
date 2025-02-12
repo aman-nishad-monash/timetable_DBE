@@ -1,20 +1,29 @@
 # forms.py
 from django import forms
+import datetime
 
 class PreferencesForm(forms.Form):
-    preferred_start_time = forms.CharField(
-        widget=forms.TextInput(attrs={
-            'placeholder': 'HH:MMam/pm (e.g., 09:00am)',
-            'type': 'text'
-        }),
-        initial='08:00am'
+    preferred_start_time = forms.TimeField(
+        widget=forms.TimeInput(
+            format="%H:%M",  # 24-hour format
+            attrs={
+                'placeholder': '09:00',  # Placeholder in 24-hour format
+                'type': 'time'
+            }
+        ),
+        input_formats=["%H:%M"],  # Accept only 24-hour formatted times
+        initial="08:00"  # Make sure the initial value is in 24-hour format
     )
-    preferred_end_time = forms.CharField(
-        widget=forms.TextInput(attrs={
-            'placeholder': 'HH:MMam/pm (e.g., 05:00pm)',
-            'type': 'text'
-        }),
-        initial='10:00pm'
+    preferred_end_time = forms.TimeField(
+        widget=forms.TimeInput(
+            format="%H:%M",
+            attrs={
+                'placeholder': '17:00',
+                'type': 'time'
+            }
+        ),
+        input_formats=["%H:%M"],
+        initial="22:00"
     )
     days_off = forms.CharField(
         required=False,
@@ -45,15 +54,12 @@ class PreferencesForm(forms.Form):
     preference_order_busyness_level = forms.IntegerField(min_value=1, max_value=6, label='Schedule Tightness')
 
     def __init__(self, *args, **kwargs):
-        # Pop the dynamic options from kwargs (if provided)
         available_lecturers = kwargs.pop('available_lecturers', None)
         units = kwargs.pop('units', None)
         super(PreferencesForm, self).__init__(*args, **kwargs)
 
-        # Add a dynamic MultipleChoiceField for lecturers if options are provided.
+        # Dynamic field for lecturers.
         if available_lecturers:
-            # Create a list of tuples (value, label). Here we’re using the index as the value,
-            # but you could use a unique identifier if you have one.
             choices = [
                 (i, f"{lec[0]} - {lec[1]} ({lec[2]})")
                 for i, lec in enumerate(available_lecturers)
@@ -65,8 +71,7 @@ class PreferencesForm(forms.Form):
                 label="Select Lecturers"
             )
         
-        # For each unit (assumed to be a tuple like (unit_name, unit_code)),
-        # add an IntegerField for ranking.
+        # Dynamic fields for unit rankings.
         if units:
             for unit_name, unit_code in units:
                 field_name = f"unit_rank_{unit_code}"

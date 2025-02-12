@@ -19,6 +19,7 @@ def home(request):
     
     # Handle CSV file upload
     if request.method == "POST" and request.FILES.get("file"):
+        request.session.flush()
         csv_file = request.FILES["file"]
         classes = UniClass.load_read_csv(csv_file)
         available_lecturers, units = list(UniClass.retreive_units_lecturers(classes))
@@ -52,17 +53,13 @@ def home(request):
                                units=units)
         if form.is_valid():
             try:
-                preferred_start_time = datetime.datetime.strptime(
-                    form.cleaned_data['preferred_start_time'], "%I:%M%p"
-                )
-                preferred_end_time = datetime.datetime.strptime(
-                    form.cleaned_data['preferred_end_time'], "%I:%M%p"
-                )
+                preferred_start_time = datetime.datetime.combine(datetime.date(1900, 1, 1), form.cleaned_data['preferred_start_time'])
+                preferred_end_time = datetime.datetime.combine(datetime.date(1900, 1, 1), form.cleaned_data['preferred_end_time'])
             except ValueError:
                 preferred_start_time = None
                 preferred_end_time = None
 
-            # Process unit rankings from the dynamic fields.
+            # Process unit rankings...
             unit_ranks = {}
             for unit_name, unit_code in units:
                 key = f'unit_rank_{unit_code}'
@@ -97,7 +94,14 @@ def home(request):
                     "Busyness Level": form.cleaned_data['preference_order_busyness_level']
                 }
             }
+            
+            # Convert the time objects in cleaned_data to strings before saving in session
             saved_data = form.cleaned_data.copy()
+            if saved_data.get('preferred_start_time'):
+                saved_data['preferred_start_time'] = saved_data['preferred_start_time'].isoformat()
+            if saved_data.get('preferred_end_time'):
+                saved_data['preferred_end_time'] = saved_data['preferred_end_time'].isoformat()
+            
             request.session["user_preferences"] = saved_data
             request.session.set_expiry(300)
             
@@ -105,6 +109,7 @@ def home(request):
             timetable_classes = timetable_generator(classes, all_preferences)
             request.session['timetable_classes'] = [cls.to_dict() for cls in timetable_classes]
             return redirect('timetable_view')
+
         else:
             print("Form errors:", form.errors)
 
