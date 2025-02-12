@@ -12,150 +12,77 @@
     <div id="fileList"></div>
   </form>
 
-  <!-- Preferences Form -->
-  <form method="post" id="preferencesForm">
-    {% csrf_token %}
-    <!-- Lecturer Selection Section -->
-    {% if available_lecturers %}
-      <div class="lecturers-section">
-        <h3>Select Lecturers</h3>
-        <ol>
-          {% for avl_lec in available_lecturers %}
-            <li>
-              <div class="lecturer-item">
-                <input type="checkbox" name="lecturers" value="{{ forloop.counter0 }}">
-                <div class="lecturer-info">
-                  <strong>Lecturer:</strong> {{ avl_lec.0 }}<br>
-                  <strong>Unit:</strong> {{ avl_lec.1 }}<br>
-                  <strong>Type:</strong> {{ avl_lec.2 }}
-                </div>
-              </div>
-            </li>
-          {% endfor %}
-        </ol>
-      </div>
-    {% else %}
-      <p>No classes loaded yet. Please upload a CSV file.</p>
-    {% endif %}
+<!-- Preferences Form -->
+<form method="post" id="preferencesForm">
+  {% csrf_token %}
 
-    <!-- Time Inputs -->
-    <div class="time-picker-group">
-      <div class="preference-group">
-        <label for="{{ form.preferred_start_time.id_for_label }}">{{ form.preferred_start_time.label }}</label>
-        {{ form.preferred_start_time }}
-      </div>
-      <div class="preference-group">
-        <label for="{{ form.preferred_end_time.id_for_label }}">{{ form.preferred_end_time.label }}</label>
-        {{ form.preferred_end_time }}
-      </div>
+  <!-- Render dynamic lecturers field if it exists -->
+  {% if form.fields.lecturers %}
+    <div class="lecturers-section">
+      <h3>Select Lecturers</h3>
+      {{ form.lecturers }}
     </div>
+  {% endif %}
 
-    <!-- Days Off -->
+  <!-- Time Inputs -->
+  <div class="time-picker-group">
     <div class="preference-group">
-      <label for="{{ form.days_off.id_for_label }}">{{ form.days_off.label }}</label>
-      {{ form.days_off }}
+      <label for="{{ form.preferred_start_time.id_for_label }}">{{ form.preferred_start_time.label }}</label>
+      {{ form.preferred_start_time }}
     </div>
+    <div class="preference-group">
+      <label for="{{ form.preferred_end_time.id_for_label }}">{{ form.preferred_end_time.label }}</label>
+      {{ form.preferred_end_time }}
+    </div>
+  </div>
 
-    <!-- Unit Ranks -->
-    {% if units %}
-      <div class="preference-group">
-        <h3>Unit Rankings (4 = most important)</h3>
-        {% for unit_name, unit_code in units %}
-          <div class="input-group">
-            <label>{{ unit_name }} ({{ unit_code }})</label>
-            <input type="number" name="unit_rank_{{ unit_code }}" min="1" max="4" required>
-          </div>
-        {% endfor %}
+  <!-- Days Off -->
+  <div class="preference-group">
+    <label for="{{ form.days_off.id_for_label }}">{{ form.days_off.label }}</label>
+    {{ form.days_off }}
+  </div>
+
+  <!-- Render dynamic unit ranking fields -->
+  {% for field in form %}
+    {% if field.name|slice:":10" == "unit_rank_" %}
+
+  <div class="input-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
       </div>
     {% endif %}
+  {% endfor %}
 
-    <!-- Busy Schedule -->
-    <div class="preference-group">
-      <label>
-        {{ form.busy_sched }} {{ form.busy_sched.label }}
-      </label>
-    </div>
+  <!-- Busy Schedule -->
+  <div class="preference-group">
+    <label>{{ form.busy_sched }} {{ form.busy_sched.label }}</label>
+  </div>
 
-    <!-- Critical Features -->
-    <div class="preference-group">
-      <h3>Critical Preferences</h3>
-      {% for field in form %}
-        {% if field.name|slice:":8" == "critical" %}
-          <div class="critical-item">
-            <label>
-              {{ field }} {{ field.label }}
-            </label>
-          </div>
-        {% endif %}
-      {% endfor %}
-    </div>
+  <!-- Critical Features and Preference Order Sections -->
+  <div class="preference-group">
+    <h3>Critical Preferences</h3>
+    {% for field in form %}
+      {% if field.name|slice:":8" == "critical" %}
+        <div class="critical-item">
+          <label>{{ field }} {{ field.label }}</label>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
 
-    <!-- Preference Order -->
-    <div class="preference-group">
-      <h3>Preference Priority Order</h3>
-      {% for field in form %}
-        {% if field.name|slice:":16" == "preference_order" %}
-          <div class="order-item">
-            <label>{{ field }} {{ field.label }}</label>
-          </div>
-        {% endif %}
-      {% endfor %}
-    </div>
+  <div class="preference-group">
+    <h3>Preference Priority Order</h3>
+    {% for field in form %}
+      {% if field.name|slice:":16" == "preference_order" %}
+        <div class="order-item">
+          <label>{{ field }} {{ field.label }}</label>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
 
-    <button type="submit" name="action" value="save_preferences" class="save-button">
-      Generate Timetable
-    </button>
-  </form>
-
-
-  <!-- JavaScript for file upload interaction -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const dropZone = document.getElementById("dropZone");
-      const fileInput = document.querySelector(".drop-zone__input");
-      const fileList = document.getElementById("fileList");
-      const maxSize = 2 * 1024 * 1024; // 2MB
-
-      dropZone.addEventListener("click", (event) => {
-        if (
-          event.target.tagName.toLowerCase() === "button" ||
-          event.target.classList.contains("drop-zone__input")
-        ) {
-          return;
-        }
-        fileInput.click();
-      });
-
-      fileInput.addEventListener("change", () => {
-        fileList.innerHTML = "";
-        const file = fileInput.files[0];
-
-        if (file) {
-          if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-            alert("Only CSV files are allowed!");
-            fileInput.value = ""; // Clear input
-            return;
-          }
-
-          if (file.size > maxSize) {
-            alert("File size exceeds 2MB limit!");
-            fileInput.value = ""; // Clear input
-            return;
-          }
-
-          const fileItem = document.createElement("div");
-          fileItem.textContent = `${file.name} (${file.size} bytes)`;
-          fileList.appendChild(fileItem);
-        }
-      });
-
-      document.getElementById("timetableForm").addEventListener("submit", (event) => {
-        if (!fileInput.files.length) {
-          alert("Please upload a valid CSV file.");
-          event.preventDefault();
-        }
-      });
-    });
-
-  </script>
+  <button type="submit" name="action" value="save_preferences" class="save-button">
+    Generate Timetable
+  </button>
+</form>
 {% endblock %}
