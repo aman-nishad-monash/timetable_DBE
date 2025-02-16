@@ -1,7 +1,7 @@
 import datetime, csv, re, io, time
 
 class UniClass:
-    def __init__(self, unit_name, class_type, day, start_time, duration, lecturer, unit_code, end_time):
+    def __init__(self, unit_name, class_type, day, start_time, duration, lecturer, unit_code, end_time, location):
         self.unit_name = unit_name
         self.class_type = class_type
         self.day = day
@@ -20,6 +20,7 @@ class UniClass:
         self.shortlisting_failed = None
         self.criticality_passed = True
         self.feature_scores = {}  
+        self.location = location
     
     def __repr__(self):
         return f'''{self.unit_code}: [{self.day} : {self.start_time} - {self.end_time}] , {self.lecturer}'''
@@ -54,8 +55,9 @@ class UniClass:
                 day = row['Day']
                 duration = convert_duration_to_hours(row['Duration'])
                 unit_code = match1.group()
+                location = row['Location']
                 end_time = start_time + duration
-                classes.append(UniClass(unit_name, class_type, day, start_time, duration, lecturer, unit_code, end_time))
+                classes.append(UniClass(unit_name, class_type, day, start_time, duration, lecturer, unit_code, end_time, location))
         return classes
 
     def retreive_units_lecturers(classes):
@@ -131,6 +133,7 @@ class UniClass:
             "shortlisting_failed": self.shortlisting_failed,
             "criticality_passed": self.criticality_passed,
             "feature_scores": self.feature_scores,
+            "location": self.location
         }
 
     @classmethod
@@ -156,7 +159,8 @@ class UniClass:
             duration=duration,
             lecturer=data['lecturer'],
             unit_code=data['unit_code'],
-            end_time=end_time
+            end_time=end_time,
+            location=data.get('location')
         )
         # Set any additional attributes
         instance.day_off_feature_score = data.get('day_off_feature_score', 1)
@@ -185,7 +189,7 @@ def score_allocation(preference_order, critical_features):
     
     # Increase multiplier for critical features
     scores_allocated = {
-        feature: score * 5.0 if critical_features[feature] else score 
+        feature: score * 10.0 if critical_features[feature] else score 
         for feature, score in scores_allocated.items()
     }
     return scores_allocated
@@ -210,7 +214,6 @@ def score_calculation(cls, class_feature_score, feature_rank, critical_features,
     else:
         if critical_features[feature]:
             cls.criticality_passed = False
-        feature_score -= 1
     setattr(cls, class_feature_score, feature_score)
 ## Main
 def class_scoring(classes, all_preferences):
@@ -234,28 +237,28 @@ def class_scoring(classes, all_preferences):
                 if cls.lecture_ideality:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
                     
             elif feature == "Unit Importance":
-                contribution = feature_weight + (all_preferences["Unit Ranks"][cls.unit_name] * 1.5)
+                contribution = feature_weight + (all_preferences["Unit Ranks"][cls.unit_name] * 20)
                 
             elif feature == "Days Off":
                 if cls.day not in all_preferences["Days Off"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
                     
             elif feature == "Preferred Start Time":
                 if cls.start_time >= all_preferences["Preferred Start Time"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
                     
             elif feature == "Preferred End Time":
                 if cls.end_time <= all_preferences["Preferred End Time"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
 
             # Apply calculated values
             cls.feature_scores[feature] = contribution - penalty
@@ -417,7 +420,7 @@ def display_timetable(selected_classes):
     
     # Diagnostic message
     if total_score < 9500:
-        print("\nDiagnostic Report: Score below 9500")
+        print("\nDiagnostic Report: Timetable Score below average")
         print("Consider adjusting these aspects:")
         
         # Identify underperforming features
@@ -432,7 +435,7 @@ def display_timetable(selected_classes):
                 elif "Time" in feature:
                     print(f"  → Consider widening preferred time window")
                 elif feature == "Days Off":
-                    print("  → Reduce number of requested days off")
+                    print(f"  → Change day(s) off")
                 elif feature == "Busyness Level":
                     print("  → Try different clustering/spreading preference")
 

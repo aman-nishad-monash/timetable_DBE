@@ -12,77 +12,80 @@
     <div id="fileList"></div>
   </form>
 
-<!-- Preferences Form -->
-<form method="post" id="preferencesForm">
-  {% csrf_token %}
+  <!-- Preferences Form -->
+  <form method="post" id="preferencesForm">
+    {% csrf_token %}
 
-  <!-- Render dynamic lecturers field if it exists -->
-  {% if form.fields.lecturers %}
-    <div class="lecturers-section">
-      <h3>Select Lecturers</h3>
-      {{ form.lecturers }}
-    </div>
-  {% endif %}
-
-  <!-- Time Inputs -->
-  <div class="time-picker-group">
-    <div class="preference-group">
-      <label for="{{ form.preferred_start_time.id_for_label }}">{{ form.preferred_start_time.label }}</label>
-      {{ form.preferred_start_time }}
-    </div>
-    <div class="preference-group">
-      <label for="{{ form.preferred_end_time.id_for_label }}">{{ form.preferred_end_time.label }}</label>
-      {{ form.preferred_end_time }}
-    </div>
-  </div>
-
-  <!-- Days Off -->
-  <div class="preference-group">
-    <label for="{{ form.days_off.id_for_label }}">{{ form.days_off.label }}</label>
-    {{ form.days_off }}
-  </div>
-
-  <!-- Render dynamic unit ranking fields -->
-  {% for field in form %}
-    {% if field.name|slice:":10" == "unit_rank_" %}
-
-  <div class="input-group">
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
+    <!-- Lecturer Selection -->
+    {% if form.fields.lecturers %}
+      <div class="lecturers-section">
+        <h3>Select Lecturers</h3>
+        {{ form.lecturers }}
       </div>
     {% endif %}
-  {% endfor %}
 
-  <!-- Busy Schedule -->
-  <div class="preference-group">
-    <label>{{ form.busy_sched }} {{ form.busy_sched.label }}</label>
-  </div>
+    <!-- Time Inputs -->
+    <div class="time-picker-group">
+      <div class="preference-group">
+        <label for="{{ form.preferred_start_time.id_for_label }}">{{ form.preferred_start_time.label }}</label>
+        {{ form.preferred_start_time }}
+      </div>
+      <div class="preference-group">
+        <label for="{{ form.preferred_end_time.id_for_label }}">{{ form.preferred_end_time.label }}</label>
+        {{ form.preferred_end_time }}
+      </div>
+    </div>
 
-  <!-- Critical Features and Preference Order Sections -->
-  <div class="preference-group">
-    <h3>Critical Preferences</h3>
-    {% for field in form %}
-      {% if field.name|slice:":8" == "critical" %}
-        <div class="critical-item">
-          <label>{{ field }} {{ field.label }}</label>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
+    <!-- Days Off -->
+    <div class="preference-group">
+      <label for="{{ form.days_off.id_for_label }}">{{ form.days_off.label }}</label>
+      {{ form.days_off }}
+    </div>
 
-  <div class="preference-group">
-    <h3>Preference Priority Order</h3>
-    {% for field in form %}
-      {% if field.name|slice:":16" == "preference_order" %}
-        <div class="order-item">
-          <label>{{ field }} {{ field.label }}</label>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
+    <!-- Unit Rankings Section -->
+    <div class="unit-rankings-section">
+      <h3>Unit Rankings</h3>
+      {% for field in form %}
+        {% if field.name|slice:":10" == "unit_rank_" %}
+          <div class="input-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
 
-  <button type="submit" name="action" value="save_preferences" class="save-button">
-    Generate Timetable
-  </button>
-</form>
+    <!-- Busy Schedule -->
+    <div class="preference-group">
+      <label>{{ form.busy_sched }} {{ form.busy_sched.label }}</label>
+    </div>
+
+    <!-- Critical Preferences Section -->
+    <div class="preference-group">
+      <h3>Critical Preferences</h3>
+      {% for field in form %}
+        {% if field.name|slice:":8" == "critical" %}
+          <div class="critical-item">
+            <label>{{ field }} {{ field.label }}</label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Preference Priority Weights Section -->
+    <div class="preference-group">
+      <h3>Preference Priority Weights</h3>
+      {% for field in form %}
+        {% if field.name|slice:":16" == "preference_order" %}
+          <div class="order-item">
+            <label>{{ field }} {{ field.label }}</label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <button type="submit" name="action" value="save_preferences" class="save-button">
+      Generate Timetable
+    </button>
+  </form>
 {% endblock %}

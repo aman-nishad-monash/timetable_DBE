@@ -1,20 +1,45 @@
 {% extends "timetable_gen/base.html" %}
 
 {% block content %}
-  <!-- Navigation Button to Home -->
+  <!-- Navigation Buttons -->
   <a href="{% url 'reset' %}" class="nav-button">Back to Home</a>
   <a href="{% url 'home' %}" class="nav-button">Change Preferences</a>
+  <button onclick="window.print()" class="nav-button">Print as PDF</button>
 
-  <h2>Generated Timetable</h2>
+  <h1>Generated Timetable</h1>
+
   {% if timetable_classes %}
     <div class="timetable">
-      {% for cls in timetable_classes %}
-        <div class="timetable-entry">
-          <!-- Replace the fields below with your actual timetable data -->
-          <p><strong>{{ cls.unit_name }}</strong> – {{ cls.lecturer_name }}</p>
-          <p>{{ cls.day }}: {{ cls.start_time }} – {{ cls.end_time }}</p>
-          <p>Class type: {{ cls.class_type }}</p>
-        </div>
+      {% for day, classes in timetable_classes.items %}
+        {% if classes %}
+          <section class="timetable-day">
+            <h3>{{ day }}</h3>
+            <table class="timetable-table">
+              <thead>
+                <tr>
+                  <th>Faculty</th>
+                  <th>Unit</th>
+                  <th>Unit Code</th>
+                  <th>Class Type</th>
+                  <th>Timing</th>
+                  <th>Location</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cls in classes %}
+                  <tr>
+                    <td>{{ cls.lecturer }}</td>
+                    <td>{{ cls.unit_name }}</td>
+                    <td>{{ cls.unit_code }}</td>
+                    <td>{{ cls.class_type }}</td>
+                    <td>{{ cls.start_time }} – {{ cls.end_time }}</td>
+                    <td>{{ cls.location }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </section>
+        {% endif %}
       {% endfor %}
     </div>
   {% else %}

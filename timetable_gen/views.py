@@ -98,9 +98,10 @@ def home(request):
             # Convert the time objects in cleaned_data to strings before saving in session
             saved_data = form.cleaned_data.copy()
             if saved_data.get('preferred_start_time'):
-                saved_data['preferred_start_time'] = saved_data['preferred_start_time'].isoformat()
+                # Format as "HH:MM"
+                saved_data['preferred_start_time'] = saved_data['preferred_start_time'].strftime("%H:%M")
             if saved_data.get('preferred_end_time'):
-                saved_data['preferred_end_time'] = saved_data['preferred_end_time'].isoformat()
+                saved_data['preferred_end_time'] = saved_data['preferred_end_time'].strftime("%H:%M")
             
             request.session["user_preferences"] = saved_data
             request.session.set_expiry(300)
@@ -122,12 +123,31 @@ def home(request):
 
 def timetable_view(request):
     timetable_classes_serialized = request.session.get('timetable_classes')
-    timetable_classes = (
-        [UniClass.from_dict(data) for data in timetable_classes_serialized]
-        if timetable_classes_serialized else None
-    )
+    daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    timetable = {day: [] for day in daysOfWeek}
+    if timetable_classes_serialized:
+        timetable_classes = (
+            [UniClass.from_dict(data) for data in timetable_classes_serialized]
+            if timetable_classes_serialized else None
+        )
+        for cls in timetable_classes:
+            timetable[cls.day].append(cls)
+        
+        # 2. Sort the classes in each day's list by the original datetime start_time
+        for day in timetable:
+            timetable[day].sort(key=lambda cls: cls.start_time)
+        
+        # 3. Format class attributes after sorting
+        for day in timetable:
+            for cls in timetable[day]:
+                # Capitalize the class_type (assuming it is at least 1 char long)
+                cls.class_type = cls.class_type[0].upper() + cls.class_type[1:]
+                # Format start_time and end_time as desired
+                cls.start_time = cls.start_time.strftime("%I:%M %p").lstrip("0").lower()
+                cls.end_time = cls.end_time.strftime("%I:%M %p").lstrip("0").lower()
+
     return render(request, 'timetable_gen/timetableView.html', {
-        'timetable_classes': timetable_classes,
+        'timetable_classes': timetable,
     })
 
 def reset_view(request):

@@ -30,6 +30,80 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    /* Additional styling for dynamically rendered sections */
+    .lecturers-section {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* General input group (for items that should appear as cards) */
+    .input-group {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Styling for Unit Rankings section as one unified card */
+    .unit-rankings-section {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .unit-rankings-section h3 {
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #ffffff;
+      padding-bottom: 0.5rem;
+      color: #333;
+    }
+    /* Override input-group styling when inside unit rankings */
+    .unit-rankings-section .input-group {
+      margin: 0;
+      padding: 0.5rem 0;
+      background: transparent;
+      box-shadow: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .unit-rankings-section .input-group label {
+      font-weight: normal;
+      min-width: 150px;
+    }
+    /* Uniform styling for labels and form elements within preferences */
+    .preference-group label,
+    .lecturers-section label,
+    .input-group label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .preference-group input,
+    .preference-group select,
+    .preference-group textarea,
+    .lecturers-section input,
+    .lecturers-section select,
+    .lecturers-section textarea,
+    .input-group input,
+    .input-group select,
+    .input-group textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    /* Specific styling for number inputs (Unit rankings and Weights) */
+    input[type="number"] {
+      width: auto;
+      max-width: 100px;
+      display: inline-block;
+    }
     /* Time pickers */
     .time-picker-group {
       display: flex;
@@ -95,6 +169,133 @@
     }
     .nav-button:hover {
       background-color: #45a049;
+    }
+    /* Navigation buttons */
+    .nav-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      background-color: #3498db;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+    .nav-button:hover {
+      background-color: #2980b9;
+    }
+    /* Overall timetable container */
+    .timetable {
+      margin: 2rem auto;
+      width: 90%;
+      max-width: 1000px;
+    }
+    /* Each day's section */
+    .timetable-day {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    /* Day heading */
+    .timetable-day h3 {
+      margin-top: 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #3498db;
+      color: #333;
+    }
+    /* Table styles */
+    .timetable-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .timetable-table th,
+    .timetable-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    .timetable-table th {
+      background-color: #3498db;
+      color: #fff;
+      font-weight: 600;
+    }
+    .timetable-table tbody tr:nth-child(odd) {
+      background-color: #f2f2f2;
+    }
+    .timetable-table tbody tr:hover {
+      background-color: #e9f5fb;
+    }
+    /* Page heading */
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+    }
+    /* Form button styling */
+    button[type="submit"] {
+      padding: 0.5rem 1rem;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover {
+      background-color: #1976D2;
+    }
+    @media print {
+      @page {
+        size: auto;
+        margin: 0;  /* Removes browser-added margins that contain date, title, and URL */
+      }
+      /* Hide navigation buttons and the print button itself */
+      .nav-button,
+      .print-button,
+      form,
+      header,
+      footer {
+        display: none !important;
+      }
+      /* Adjust body and container for print */
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 0.9rem;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .timetable {
+        width: 100%;
+        margin: 0 auto;
+      }
+      /* Reduce spacing in each day's section */
+      .timetable-day {
+        margin-bottom: 0.5rem;
+        padding: 0.3rem;
+      }
+      /* Adjust table font and spacing */
+      .timetable-table {
+        font-size: 0.8rem;
+        border-collapse: collapse;
+        width: 100%;
+      }
+      .timetable-table th,
+      .timetable-table td {
+        padding: 0.2rem 0.3rem;
+        border: 1px solid #ccc;
+      }
+      /* Optional: adjust heading sizes for print */
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+      h3 {
+        font-size: 1rem;
+        margin: 0.2rem 0;
+      }
     }
   </style>
 </head>
