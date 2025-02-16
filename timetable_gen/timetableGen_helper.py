@@ -1,4 +1,6 @@
 import datetime, csv, re, io, time
+from scipy.optimize import linear_sum_assignment
+import numpy as np
 
 class UniClass:
     def __init__(self, unit_name, class_type, day, start_time, duration, lecturer, unit_code, end_time, location):
@@ -175,7 +177,6 @@ class UniClass:
         instance.feature_scores = data.get('feature_scores', {})
         return instance
 
-
 #Scoring of classes according to preferences of user
 ## Subsidiary
 def score_allocation(preference_order, critical_features):
@@ -189,7 +190,7 @@ def score_allocation(preference_order, critical_features):
     
     # Increase multiplier for critical features
     scores_allocated = {
-        feature: score * 10.0 if critical_features[feature] else score 
+        feature: score * 5.0 if critical_features[feature] else score 
         for feature, score in scores_allocated.items()
     }
     return scores_allocated
@@ -204,17 +205,6 @@ def update_class_status(cls):
         cls.ideality_status = "Marginal"
     else:
         cls.ideality_status = "Undesirable"
-def score_calculation(cls, class_feature_score, feature_rank, critical_features, feature, passed):
-    feature_score = getattr(cls, class_feature_score)  # Get the current feature score
-    if passed:
-        feature_score *= feature_rank[feature]
-        if critical_features[feature]:
-            cls.criticality_passed = True
-            feature_score *= 10
-    else:
-        if critical_features[feature]:
-            cls.criticality_passed = False
-    setattr(cls, class_feature_score, feature_score)
 ## Main
 def class_scoring(classes, all_preferences):
     scores = score_allocation(all_preferences["Preference Order"], all_preferences["Critical Features"])
@@ -237,28 +227,28 @@ def class_scoring(classes, all_preferences):
                 if cls.lecture_ideality:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
                     
             elif feature == "Unit Importance":
-                contribution = feature_weight + (all_preferences["Unit Ranks"][cls.unit_name] * 20)
+                contribution = feature_weight + (all_preferences["Unit Ranks"][cls.unit_name] * 1.5)
                 
             elif feature == "Days Off":
                 if cls.day not in all_preferences["Days Off"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
                     
             elif feature == "Preferred Start Time":
                 if cls.start_time >= all_preferences["Preferred Start Time"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
                     
             elif feature == "Preferred End Time":
                 if cls.end_time <= all_preferences["Preferred End Time"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 50
+                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
 
             # Apply calculated values
             cls.feature_scores[feature] = contribution - penalty
@@ -267,7 +257,6 @@ def class_scoring(classes, all_preferences):
         update_class_status(cls)
     
     classes.sort(key=lambda x: x.score, reverse=True)
-
 
 #Organizing classes for shortlisting
 def class_organizing(classes):
@@ -304,7 +293,7 @@ def shortlister(classes, organized_classes, all_preferences):
     selected_classes = []
     unit_ranks = all_preferences["Unit Ranks"]
     busy_sched = all_preferences["Busyness Schedule"]
-    
+    print(f"\nBusy_sched: {busy_sched}")
     # Penalty/bonus values for spread/cluster preferences
     SPREAD_PENALTY = 25  # Per existing class on day
     CLUSTER_BONUS = 30   # Per existing class on day
@@ -313,7 +302,6 @@ def shortlister(classes, organized_classes, all_preferences):
     units = list(organized_classes.keys())
     unit_code_to_name = {cls.unit_code: cls.unit_name for cls in classes}
     
-    # Sort units by their rank in Unit Ranks (higher rank first)
     sorted_units = sorted(units, key=lambda uc: unit_ranks.get(unit_code_to_name[uc], 0), reverse=True)
     
     for unit_code in sorted_units:
@@ -322,42 +310,53 @@ def shortlister(classes, organized_classes, all_preferences):
         for class_type in sorted(class_types.keys()):
             classes_for_type = class_types[class_type]
             
-            # Split classes into critical-compliant and others
+            # Split into critical-compliant and fallback candidates
             critical_compliant = [cls for cls in classes_for_type if cls.criticality_passed]
             fallback_candidates = [cls for cls in classes_for_type if not cls.criticality_passed]
             
-            # Select candidate source (priority to critical-compliant)
+            # Candidate source: use critical ones if available
             candidate_source = critical_compliant if critical_compliant else fallback_candidates
             
-            # Find non-conflicting candidates and calculate adjusted scores
-            candidates = []
+            # For each candidate in the group, compute the cost:
+            #   - If the candidate conflicts with any already selected class, assign a high cost.
+            #   - Otherwise, adjust its score by busyness (using a bonus or penalty for each class already
+            #     on the same day) and set cost = - (adjusted score) so that maximizing score is equivalent to minimizing cost.
+            costs = []
             for cls in candidate_source:
-                conflict = any(has_conflict(cls, selected_cls) for selected_cls in selected_classes)
-                if not conflict:
-                    # Calculate busyness adjustment
-                    day_count = sum(c.day == cls.day for c in selected_classes)
-                    adjusted_score = cls.score
-                    
-                    if busy_sched:  # Cluster preference
-                        adjusted_score += day_count * CLUSTER_BONUS
-                    else:           # Spread preference
-                        adjusted_score -= day_count * SPREAD_PENALTY
-                    
-                    candidates.append((cls, adjusted_score))
+                conflict = any(has_conflict(cls, sel_cls) for sel_cls in selected_classes)
+                # Count how many classes on the same day are already scheduled
+                day_count = sum(1 for sel in selected_classes if sel.day == cls.day)
+                adjusted_score = cls.score + (day_count * CLUSTER_BONUS if busy_sched else - day_count * SPREAD_PENALTY)
+                if conflict:
+                    cost = 99999  # A very high cost to (ideally) avoid conflict
+                else:
+                    cost = -adjusted_score
+                costs.append(cost)
+                print(f"  [DEBUG] {unit_code} {class_type} candidate {cls.unit_code}: "
+                      f"base score={cls.score}, day_count={day_count}, "
+                      f"adjusted_score={adjusted_score}, cost={cost}, conflict={conflict}")
             
-            # If no candidates, use highest-scored (even with conflict)
-            if not candidates:
-                print(f"Warning: No conflict-free option for {unit_code} {class_type}. Selecting highest-scored.")
+            # If every candidate is in conflict, warn and pick the highest-scored candidate (ignoring conflict)
+            if all(c == 99999 for c in costs):
+                print(f"Warning: No conflict-free option for {unit_code} {class_type}. "
+                      f"Selecting highest-scored candidate from fallback list.")
                 best_candidate = max(candidate_source, key=lambda x: x.score)
                 selected_classes.append(best_candidate)
-                continue
-            
-            # Sort candidates by adjusted score
-            candidates.sort(key=lambda x: x[1], reverse=True)
-            
-            # Select top candidate
-            selected_cls = candidates[0][0]
-            selected_classes.append(selected_cls)
+                print(f"  [DEBUG] Fallback selected for {unit_code} {class_type}: {best_candidate.unit_code} (Score: {best_candidate.score})")
+            else:
+                # Build a cost matrix (a 1 x n array) and run the Hungarian algorithm.
+                cost_matrix = np.array([costs])
+                row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                selected_idx = col_ind[0]  # only one row in this cost matrix
+                selected_cls = candidate_source[selected_idx]
+                selected_classes.append(selected_cls)
+                print(f"  [DEBUG] Hungarian selected for {unit_code} {class_type}: {selected_cls.unit_code} "
+                      f"with cost {costs[selected_idx]}")
+    
+    print("\n[DEBUG] Final Selected Classes:")
+    for cls in selected_classes:
+        print(f"  🎯 {cls.unit_code}: {cls.class_type} on {cls.day} "
+              f"({cls.start_time.strftime('%I:%M %p')} - {cls.end_time.strftime('%I:%M %p')}) | Score: {cls.score}")
     
     return selected_classes
 
