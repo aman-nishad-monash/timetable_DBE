@@ -25,7 +25,7 @@ class UniClass:
         self.location = location
     
     def __repr__(self):
-        return f'''{self.unit_code}: [{self.day} : {self.start_time} - {self.end_time}] , {self.lecturer}'''
+        return f'''{self.unit_code}: \n\t[{self.day} : {self.start_time} - {self.end_time}] , {self.lecturer}\n\t Criticality status: {self.criticality_passed}\n'''
 
     def load_read_csv(uploaded_file):
         """
@@ -208,7 +208,7 @@ def update_class_status(cls):
 ## Main
 def class_scoring(classes, all_preferences):
     scores = score_allocation(all_preferences["Preference Order"], all_preferences["Critical Features"])
-    
+    print(scores    )
     for cls in classes:
         cls.feature_scores = {feature: 0 for feature in scores.keys()}  # Initialize
         
@@ -217,7 +217,6 @@ def class_scoring(classes, all_preferences):
         
         # Set lecture ideality based on preferred lecturers
         cls.lecture_ideality = cls.lecturer in all_preferences["Ideal Lecturers"]
-        
         # Score each feature
         for feature, feature_weight in scores.items():
             contribution = 0
@@ -227,28 +226,49 @@ def class_scoring(classes, all_preferences):
                 if cls.lecture_ideality:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    if all_preferences["Critical Features"][feature]:
+                        penalty = 3000
+                        if cls.criticality_passed:
+                            cls.criticality_passed = False
+                    else:
+                        penalty = 100
                     
             elif feature == "Unit Importance":
-                contribution = feature_weight + (all_preferences["Unit Ranks"][cls.unit_name] * 1.5)
+                contribution = feature_weight + (all_preferences["Unit Ranks"][cls.unit_name] * 10)
                 
             elif feature == "Days Off":
-                if cls.day not in all_preferences["Days Off"]:
+                if cls.day.lower() not in all_preferences["Days Off"]:
+                    print("%"*70,f'Class day: {cls.day}, Days off: {all_preferences["Days Off"]}',"%"*70)
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    if all_preferences["Critical Features"][feature]:
+                        penalty = 3000
+                        if cls.criticality_passed:
+                            cls.criticality_passed = False
+                    else:
+                        penalty = 100
                     
             elif feature == "Preferred Start Time":
                 if cls.start_time >= all_preferences["Preferred Start Time"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    if all_preferences["Critical Features"][feature]:
+                        penalty = 3000
+                        if cls.criticality_passed:
+                            cls.criticality_passed = False
+                    else:
+                        penalty = 100
                     
             elif feature == "Preferred End Time":
                 if cls.end_time <= all_preferences["Preferred End Time"]:
                     contribution = feature_weight
                 else:
-                    penalty = 3000 if all_preferences["Critical Features"][feature] else 100
+                    if all_preferences["Critical Features"][feature]:
+                        penalty = 3000
+                        if cls.criticality_passed:
+                            cls.criticality_passed = False
+                    else:
+                        penalty = 100
 
             # Apply calculated values
             cls.feature_scores[feature] = contribution - penalty
@@ -272,19 +292,17 @@ def class_organizing(classes):
         ]
     
     for cls in classes:
-        if cls.criticality_passed:
-            organized_classes[cls.unit_code][cls.class_type].append(cls)
+        organized_classes[cls.unit_code][cls.class_type].append(cls)
     
     for unit_code, class_types in organized_classes.items():
         for class_type, clss in class_types.items():
             if not clss:
                 print("Change preferences: Current choices conflict with timetable")
-                exit()
-    
     return organized_classes
 
 
 #Shortlisting classes for generation of timetable
+
 def has_conflict(cls1, cls2):
     if cls1.day != cls2.day:
         return False
@@ -293,7 +311,6 @@ def shortlister(classes, organized_classes, all_preferences):
     selected_classes = []
     unit_ranks = all_preferences["Unit Ranks"]
     busy_sched = all_preferences["Busyness Schedule"]
-    print(f"\nBusy_sched: {busy_sched}")
     # Penalty/bonus values for spread/cluster preferences
     SPREAD_PENALTY = 25  # Per existing class on day
     CLUSTER_BONUS = 30   # Per existing class on day
