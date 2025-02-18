@@ -67,13 +67,12 @@ def home(request):
                 if rank:
                     unit_ranks[unit_name] = int(rank)
             unit_ranks = dict(sorted(unit_ranks.items(), key=lambda item: item[1], reverse=True))
-
             all_preferences = {
                 "Ideal Lecturers": UniClass.finalizing_ideal_lecturers(
                     form.cleaned_data.get('lecturers', []), classes, available_lecturers
                 ),
                 "Unit Ranks": unit_ranks,
-                "Days Off": [day.strip().lower() for day in form.cleaned_data['days_off'].split(',')],
+                "Days Off": form.cleaned_data.get('days_off'),
                 "Preferred Start Time": preferred_start_time,
                 "Preferred End Time": preferred_end_time,
                 "Busyness Schedule": form.cleaned_data['busy_sched'],

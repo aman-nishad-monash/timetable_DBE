@@ -25,11 +25,18 @@ class PreferencesForm(forms.Form):
         input_formats=["%H:%M"],
         initial="22:00"
     )
-    days_off = forms.CharField(
+    days_off = forms.MultipleChoiceField(
         required=False,
         label='Days off',
-        widget=forms.TextInput(attrs={'placeholder': 'e.g., Monday, Tuesday'}),
-        initial=''
+        choices=[
+        ('Monday', 'Monday'),
+        ('Tuesday', 'Tuesday'),
+        ('Wednesday', 'Wednesday'),
+        ('Thursday', 'Thursday'),
+        ('Friday', 'Friday')
+    ],
+        initial=None,
+        widget=forms.CheckboxSelectMultiple
     )
     busy_sched = forms.BooleanField(
         required=False,
